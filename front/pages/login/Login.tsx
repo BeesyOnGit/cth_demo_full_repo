@@ -7,6 +7,7 @@ import { Credentials } from "./authService";
 import { handleChange } from "@/utils/utils";
 import { useToastStore } from "../../store/useToastStore";
 import { useLanguage } from "@/i18n";
+import { getData } from "@/services/api";
 
 export const Login = () => {
     const { login, isLoading, user } = useAuthStore();
@@ -15,6 +16,13 @@ export const Login = () => {
 
     const navigate = useNavigate();
     const [creds, setCreds] = useState<Credentials>({ email: "", password: "" });
+    const [demo, setDemo] = useState<Credentials | null>(null);
+
+    useEffect(() => {
+        getData({ path: "/employees/demo" })
+            .then((d) => d.demo && setDemo({ email: d.email, password: d.password }))
+            .catch(() => {});
+    }, []);
 
     // useEffect(() => {
     //     if (user) {
@@ -88,11 +96,17 @@ export const Login = () => {
                         {t("signIn")}
                     </Button>
 
-                    {/* <div className="mt-4 text-xs text-center text-slate-400">
-                        <p>Demo Credentials:</p>
-                        <p>Admin: admin@progc.dz</p>
-                        <p>Chef Antenne: chef@progc.dz</p>
-                    </div> */}
+                    {demo && (
+                        <button
+                            type="button"
+                            onClick={() => setCreds(demo)}
+                            className="w-full rounded-lg border border-dashed border-slate-300 p-3 text-center text-xs text-slate-500 hover:bg-slate-50"
+                        >
+                            <p className="font-semibold">Demo</p>
+                            <p>{demo.email}</p>
+                            <p>{demo.password}</p>
+                        </button>
+                    )}
                 </form>
             </div>
         </div>

@@ -12,6 +12,11 @@ const Root = "/employees";
 router.get(`${Root}/`, authCheck, cleanQuery, limitationMiddleware, getEmployees);
 router.get(`${Root}/checkme`, authCheck, checkUser);
 router.get(`${Root}/logout`, logout);
+// Public on purpose: login screen shows these when DEMO_MODE=true
+router.get(`${Root}/demo`, (req, res) => {
+    if (process.env.DEMO_MODE !== "true") return res.json({ demo: false });
+    res.json({ demo: true, email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD });
+});
 router.get(`${Root}/:id`, authCheck, getEmployeeById);
 
 // POST endpoints
