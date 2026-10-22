@@ -30,7 +30,17 @@ export const createApp = () => {
     // Behind the VPS nginx: take the client IP from X-Forwarded-For, but only when it comes from localhost
     app.set("trust proxy", "loopback");
     // Middlewares
-    app.use(helmet());
+    app.use(
+        helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    // Invoice printing loads the PDF blob in a hidden iframe
+                    "frame-src": ["'self'", "blob:"],
+                    "object-src": ["'self'", "blob:"],
+                },
+            },
+        })
+    );
     app.use(
         cors({
             // origin: process.env.FRONTEND_URL || "http://localhost:3000",
