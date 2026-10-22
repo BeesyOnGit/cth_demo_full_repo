@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CTH — Situation & Décompte</title>
+<style>
+  /* ---------- Pages : exactement 2 feuilles A4 (portrait + paysage) ---------- */
+  @page { size: A4 portrait; margin: 0; }
+  @page land { size: A4 landscape; margin: 0; }
+
+  :root {
+    --ink: #0b1220; --muted: #4f5a6b; --faint: #8a94a3;
+    --line: #dfe5ec; --line2: #edf1f5;
+    --g: #0f766e; --g-ink: #0b3f3a; --g-soft: #eef6f5; --g-soft2: #dcefec;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { margin: 0; }
+  body { background: #e9edf1; color: var(--ink);
+    font: 10.5px/1.38 system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Arial, sans-serif; }
+
+  .page { position: relative; width: 210mm; height: 297mm; padding: 11mm 12mm 10mm; margin: 16px auto;
+    background: #fff; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(11,18,32,.12); break-after: page; page-break-after: always; }
+  .page.landscape .foot { left: 11mm; right: 11mm; bottom: 8mm; }
+  .page.landscape { page: land; width: 297mm; height: 210mm; padding: 9mm 11mm 8mm; }
+  /* block flow, not flex: the PDF engine (WeasyPrint) mis-sizes flex columns and overflows the page */
+  .page > * + * { margin-top: 3.2mm; }
+  .page.landscape > * + * { margin-top: 3mm; }
+  .page:last-child { break-after: auto; page-break-after: auto; }
+  .page::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--g); }
+  @media print { body { background: #fff; } .page { margin: 0; box-shadow: none; } }
+
+  .mono, .money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .right { text-align: right; } .center { text-align: center; }
+
+  /* ---------- Header ---------- */
+  .header { display: flex; justify-content: space-between; align-items: stretch; gap: 6mm;
+    padding-bottom: 3mm; border-bottom: 1px solid var(--line); }
+  .kicker { margin: 0; font-size: 8.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); }
+  .title { margin: 3px 0 7px; font-size: 19px; line-height: 1.15; font-weight: 800; letter-spacing: .2px; text-transform: uppercase; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid #b9dcd7; background: var(--g-soft); color: var(--g-ink); font-size: 9.5px; font-weight: 700; white-space: nowrap; }
+  .chip i { width: 6px; height: 6px; border-radius: 9px; background: var(--g); }
+  .chip.solid { background: var(--g); border-color: var(--g); color: #fff; } .chip.solid i { background: #fff; }
+
+  .refs { min-width: 76mm; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; align-self: flex-start; }
+  .refs .rh { padding: 4px 9px; background: var(--g-soft); color: var(--g-ink); font-size: 8.5px; font-weight: 800;
+    letter-spacing: .5px; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+  .refs dl { margin: 0; padding: 5px 9px; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; }
+  .refs dt { color: var(--muted); font-weight: 600; }
+  .refs dd { margin: 0; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; word-break: break-word; }
+
+  /* ---------- Cards ---------- */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+  .card { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .card .h { display: flex; justify-content: space-between; padding: 4px 10px; background: var(--g-soft);
+    border-bottom: 1px solid var(--line); font-size: 8.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--g-ink); }
+  .card .h span { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--g); }
+  .card .b { padding: 6px 10px; }
+  .kv { display: grid; grid-template-columns: 26mm 1fr; gap: 3px 8px; }
+  .kv dt { color: var(--muted); font-weight: 600; }
+  .kv dd { margin: 0; font-weight: 600; }
+  .kv dd.strong { font-weight: 800; color: var(--g-ink); }
+
+  /* ---------- KPI strip ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .kpi { padding: 6px 10px; border-right: 1px solid var(--line); }
+  .kpi:last-child { border-right: 0; background: var(--g); color: #fff; }
+  .kpi .l { font-size: 8.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
+  .kpi:last-child .l { color: #cdeae6; }
+  .kpi .v { margin-top: 2px; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---------- Tables ---------- */
+  .tbl-h { display: flex; justify-content: space-between; align-items: baseline; }
+  .tbl-h b { font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .tbl-h span { font-size: 9px; color: var(--faint); }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  th { padding: 5px 9px; background: var(--g-soft); color: var(--g-ink); border-bottom: 1px solid var(--line);
+    font-size: 8.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; text-align: left; }
+  td { padding: 4.6px 9px; border-bottom: 1px solid var(--line2); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+  .grp td { padding-top: 6px; background: #fafbfc; color: var(--muted); font-size: 8.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+  .sub td { padding-left: 20px; color: var(--muted); }
+  .tot td { background: var(--g-soft); font-weight: 800; border-top: 1px solid #c9e3df; }
+  .net td { background: var(--g-soft2); font-weight: 800; color: var(--g-ink); border-top: 2px solid var(--g); }
+  .pay td { background: var(--g); color: #fff; font-weight: 800; font-size: 11.5px; }
+  .step { display: inline-block; min-width: 18px; margin-right: 6px; padding: 0 4px; border-radius: 4px; background: #fff;
+    border: 1px solid #b9dcd7; color: var(--g-ink); font-size: 8.5px; font-weight: 800; text-align: center; }
+  .dash { color: var(--faint); }
+
+  /* ---------- Signatures & footer ---------- */
+  .sigs { display: grid; gap: 3mm; }
+  .sig { border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; display: flex; flex-direction: column; }
+  .sig .t { font-size: 8.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--g-ink);
+    padding-bottom: 4px; border-bottom: 1px solid var(--line2); }
+  .sig .hint { margin-top: 4px; color: var(--faint); font-size: 9px; }
+  .sig .date { margin-top: auto; color: var(--faint); font-size: 9px; }
+  .foot { position: absolute; left: 12mm; right: 12mm; bottom: 10mm; display: flex; justify-content: space-between; gap: 8mm; padding-top: 2.2mm; border-top: 1px solid var(--line);
+    color: var(--faint); font-size: 8.5px; }
+
+  /* ---------- Page 2 ---------- */
+  .words { border: 1px solid var(--line); border-left: 3px solid var(--g); border-radius: var(--radius); padding: 8px 12px; }
+  .words .l { font-size: 8.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .words .w { margin-top: 4px; font-size: 12px; font-weight: 700; line-height: 1.4; }
+  .totals { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .totals .r { display: flex; justify-content: space-between; gap: 10px; padding: 5px 11px; border-bottom: 1px solid var(--line2); }
+  .totals .r:last-child { border-bottom: 0; background: var(--g); color: #fff; font-weight: 800; font-size: 12px; }
+  .totals .k { font-weight: 600; color: var(--muted); } .totals .r:last-child .k { color: #fff; }
+  .totals .v { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .desc b { display: block; } .desc span { color: var(--muted); }
+</style>
+</head>
+
+<body>
+<!-- =================== PAGE 1 — SITUATION (A4 portrait) =================== -->
+<section class="page portrait">
+  <header class="header">
+    <div>
+      <p class="kicker">République Algérienne Démocratique et Populaire</p>
+      <h1 class="title">Situation des travaux</h1>
+      <div class="chips">
+        <span class="chip"><i></i>CTH — Contrôle technique</span>
+        <span class="chip"><i></i>Situation {{invoice.invoiceNumber}}</span>
+        {{#if invoice.definitive}}<span class="chip solid"><i></i>Définitive</span>{{/if}}
+      </div>
+    </div>
+    <div class="refs">
+      <div class="rh">Références</div>
+      <dl>
+        <dt>Date</dt><dd>{{formatDate invoice.invoiceDate}}</dd>
+        <dt>Réf.</dt><dd>{{uppercase project.ref}}</dd>
+        <dt>Arrêtée au</dt><dd>… / … / 20…</dd>
+      </dl>
+    </div>
+  </header>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="h">Entreprise</div>
+      <div class="b"><dl class="kv">
+        <dt>Raison sociale</dt><dd>{{company.name}}</dd>
+        <dt>Adresse</dt><dd>{{company.address}}</dd>
+        <dt>NIF</dt><dd class="mono">{{company.nif}}</dd>
+        <dt>NIS</dt><dd class="mono">{{company.nis}}</dd>
+        <dt>RC</dt><dd class="mono">{{company.rc}}</dd>
+        <dt>Compte bancaire</dt><dd class="mono">{{company.bankName}}</dd>
+      </dl></div>
+    </div>
+    <div class="card">
+      <div class="h">Maître de l’ouvrage</div>
+      <div class="b"><dl class="kv">
+        <dt>Client</dt><dd>{{capitalize project.clientId}}</dd>
+        <dt>Opération</dt><dd>{{capitalize project.title}}</dd>
+        <dt>Convention</dt><dd>{{project.convention}}</dd>
+        <dt>Montant TTC</dt><dd class="strong money">{{formatCurrency project.montantTTC}}</dd>
+      </dl></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="h">Objet <span>Formulaire</span></div>
+    <div class="b" style="font-size:11.5px;font-weight:600">{{capitalize project.title}}</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">Net de la situation HT</div><div class="v">{{formatCurrency invoice.amountHT}}</div></div>
+    <div class="kpi"><div class="l">Situation TTC</div><div class="v">{{formatCurrency invoice.amountTTC}}</div></div>
+    <div class="kpi"><div class="l">Net à payer</div><div class="v">{{formatCurrency project.cumulatedUnrecoveredAmountTTC}}</div></div>
+  </div>
+
+  <div class="tbl-h"><b>Récapitulatif</b><span>Montants en dinars algériens (DA)</span></div>
+  <table aria-label="Récapitulatif situation">
+    <thead><tr><th>Libellé</th><th class="right" style="width:46mm">Montant (DA)</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="2">Prestations et avances</td></tr>
+      <tr><td>Montant des prestations cumulées HT</td><td class="right mono">{{formatCurrency project.cumulatedAmountHT}}</td></tr>
+      <tr class="sub"><td>Avances forfaitaires (total)</td><td class="right dash">—</td></tr>
+      <tr class="sub"><td>Avances sur approvisionnement (total)</td><td class="right dash">—</td></tr>
+      <tr class="sub"><td>Autres (à préciser)</td><td class="right dash">—</td></tr>
+      <tr class="tot"><td><span class="step">1</span>Total (1)</td><td class="right mono">{{formatCurrency project.cumulatedAmountHT}}</td></tr>
+      <tr class="grp"><td colspan="2">À déduire</td></tr>
+      <tr><td>Prestations réglées précédemment</td><td class="right mono">{{formatCurrency project.cumulatedRecoveredAmountHT}}</td></tr>
+      <tr class="sub"><td>Avances forfaitaires reçues</td><td class="right dash">—</td></tr>
+      <tr class="sub"><td>Avances sur approvisionnement</td><td class="right dash">—</td></tr>
+      <tr class="sub"><td>Autres (à préciser)</td><td class="right dash">—</td></tr>
+      <tr class="tot"><td><span class="step">2</span>Total (2)</td><td class="right mono">{{formatCurrency project.cumulatedRecoveredAmountHT}}</td></tr>
+      <tr class="net"><td><span class="step">3</span>Montant net de la situation HT = (1) − (2)</td><td class="right mono">{{formatCurrency invoice.amountHT}}</td></tr>
+      {{#each project.vatRates}}
+      <tr><td>{{this.label}}</td><td class="right mono">{{formatCurrency this.amount}}</td></tr>
+      {{/each}}
+      <tr class="tot"><td>Montant de la situation TTC</td><td class="right mono">{{formatCurrency invoice.amountTTC}}</td></tr>
+      <tr class="pay"><td>Montant net à payer à l’entreprise</td><td class="right mono">{{formatCurrency project.cumulatedUnrecoveredAmountTTC}}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sigs" style="grid-template-columns:1fr 1fr;height:34mm">
+    <div class="sig"><div class="t">Le Maître de l’Ouvrage</div><div class="hint">Cachet et signature</div><div class="date">Le … / … / 20…</div></div>
+    <div class="sig"><div class="t">L’Entreprise</div><div class="hint">Cachet et signature</div><div class="date">Le … / … / 20…</div></div>
+  </div>
+
+  <footer class="foot"><span>{{company.name}} · NIF {{company.nif}} · RC {{company.rc}}</span><span>Situation {{invoice.invoiceNumber}} · Page 1 / 2</span></footer>
+</section>
+
+<!-- =================== PAGE 2 — DÉCOMPTE (A4 paysage) =================== -->
+<section class="page landscape">
+  <header class="header">
+    <div>
+      <p class="kicker">{{company.name}}</p>
+      <h1 class="title">Décompte des prestations réalisées</h1>
+      <div class="chips">
+        <span class="chip"><i></i>Décompte N° {{project.decompteNumber}}</span>
+        <span class="chip"><i></i>{{project.projectNumber}}</span>
+        {{#if invoice.definitive}}<span class="chip solid"><i></i>Définitif</span>{{/if}}
+      </div>
+    </div>
+    <div class="refs">
+      <div class="rh">Références</div>
+      <dl>
+        <dt>Date</dt><dd>{{formatDate invoice.invoiceDate}}</dd>
+        <dt>Réf.</dt><dd>{{uppercase project.ref}}</dd>
+        <dt>Arrêté au</dt><dd>… / … / 20…</dd>
+      </dl>
+    </div>
+  </header>
+
+  <div class="grid2" style="grid-template-columns:2fr 1fr 1fr">
+    <div class="card"><div class="h">Objet <span>Formulaire</span></div><div class="b" style="font-weight:600">{{capitalize project.title}}</div></div>
+    <div class="card"><div class="h">Client</div><div class="b" style="font-weight:600">{{capitalize project.clientId}}</div></div>
+    <div class="card"><div class="h">Convention</div><div class="b" style="font-weight:600">{{project.convention}}&nbsp;</div></div>
+  </div>
+
+  <div class="tbl-h"><b>Détail des prestations</b><span>Montants en dinars algériens (DA)</span></div>
+  <table aria-label="Tableau décompte">
+    <thead><tr>
+      <th class="center" style="width:10mm">N°</th>
+      <th>Désignation des prestations</th>
+      <th class="center" style="width:12mm">Qté</th>
+      <th class="right" style="width:32mm">Travaux HT</th>
+      <th class="center" style="width:16mm">CTH %</th>
+      <th class="right" style="width:34mm">Précédentes HT</th>
+      <th class="right" style="width:32mm">Mois HT</th>
+      <th class="right" style="width:34mm">Total HT</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td class="center">1</td>
+        <td class="desc"><b>{{project.serviceTypeId.label}} — {{project.title}}</b>
+          <span>Situation d’entreprise n° {{project.decompteNumber}}{{#if invoice.definitive}} et définitive{{/if}} — {{capitalize project.clientId}}</span></td>
+        <td class="center">1</td>
+        <td class="right mono">{{formatCurrency project.workAmountMT}}</td>
+        <td class="center mono">{{project.serviceRate}} %</td>
+        <td class="right mono">{{formatCurrency project.cumulatedRecoveredAmountHT}}</td>
+        <td class="right mono">{{formatCurrency invoice.amountHT}}</td>
+        <td class="right mono"><b>{{formatCurrency project.allCumulated}}</b></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="grid2" style="grid-template-columns:1fr 92mm;align-items:start">
+    <div class="words">
+      <div class="l">Arrêté le présent décompte à la somme TTC de</div>
+      <div class="w">{{capitalize (numberToWords project.allCumulated)}}</div>
+    </div>
+    <div class="totals">
+      <div class="r"><span class="k">Total HT</span><span class="v">{{formatCurrency project.cumulatedAmountHT}}</span></div>
+      {{#each project.vatRates}}
+      <div class="r"><span class="k">{{this.label}}</span><span class="v">{{formatCurrency this.amount}}</span></div>
+      {{/each}}
+      <div class="r"><span class="k">Total TTC</span><span class="v">{{formatCurrency project.allCumulated}}</span></div>
+    </div>
+  </div>
+
+  <div class="sigs" style="grid-template-columns:1fr 1fr 1fr;height:30mm">
+    <div class="sig"><div class="t">CTH</div><div class="hint">Nom, cachet et signature</div><div class="date">Le … / … / 20…</div></div>
+    <div class="sig"><div class="t">Maître de l’Ouvrage</div><div class="hint">Nom, cachet et signature</div><div class="date">Le … / … / 20…</div></div>
+    <div class="sig"><div class="t">Observations</div><div class="hint">—</div></div>
+  </div>
+
+  <footer class="foot"><span>{{company.name}} · {{company.address}}</span><span>Décompte N° {{project.decompteNumber}} · Page 2 / 2</span></footer>
+</section>
+</body>
+</html>

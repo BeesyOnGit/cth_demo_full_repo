@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@theme {
+    /* Design Token Colors */
+    --color-primary: #0f172a;
+    --color-primary-foreground: #f8fafc;
+    --color-secondary: #334155;
+    --color-secondary-foreground: #f1f5f9;
+    --color-accent: #0ea5e9;
+    --color-accent-hover: #0284c7;
+    --color-accent-foreground: #ffffff;
+    --color-background: #f8fafc;
+    --color-surface: #ffffff;
+    --color-danger: #ef4444;
+    --color-danger-hover: #dc2626;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-border: #e2e8f0;
+    --color-input: #e2e8f0;
+    --color-ring: #0ea5e9;
+
+    /* Animations */
+    --animate-slide-in-right: slide-in-right 0.3s ease-out;
+    --animate-rotate: rotate 1s linear infinite;
+    --animate-prixClipFix: prixClipFix 2s linear infinite;
+
+    /* Font Family */
+    --font-family-sans: Inter, system-ui, sans-serif;
+}
+
+@keyframes slide-in-right {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes prixClipFix {
+    0% {
+        clip-path: polygon(50% 50%, 0 0, 0 0, 0 0, 0 0, 0 0);
+    }
+    25% {
+        clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 0, 100% 0, 100% 0);
+    }
+    50% {
+        clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%);
+    }
+    75% {
+        clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 100%);
+    }
+    100% {
+        clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0);
+    }
+}
+
+/* Cursor Pointer for Clickable Elements */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+[type="button"]:not(:disabled),
+[type="submit"]:not(:disabled),
+a,
+select,
+.cursor-pointer {
+    cursor: pointer !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1; /* Slate 300 */
+    border-radius: 9999rem;
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8; /* Slate 400 */
+}
+
+/* Hide scrollbar utility class */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Base resets handled by Tailwind CDN, adding specific overrides here if needed */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* RTL Support - Ensure proper text alignment and direction */
+[dir="rtl"] {
+    text-align: start;
+}
+
+/* Fix flex row direction in RTL */
+[dir="rtl"] .flex-row {
+    flex-direction: row-reverse;
+}
+
+/* RTL-aware transitions for sidebar */
+[dir="rtl"] aside {
+    left: auto;
+    right: 0;
+}
+
+[dir="rtl"] aside.translate-x-full {
+    transform: translateX(100%);
+}
+
+[dir="rtl"] aside.-translate-x-full {
+    transform: translateX(-100%);
+}

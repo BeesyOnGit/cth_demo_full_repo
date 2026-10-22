@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>CTH — Situation & Décompte</title>
+
+        <style>
+            @page {
+                size: A4 portrait;
+                margin: 12mm;
+            }
+            @page landscape {
+                size: A4 landscape;
+                margin: 12mm;
+            }
+            @media print {
+                .page.landscape {
+                    page: landscape;
+                }
+            }
+
+            :root {
+                --ink: #0b1220;
+                --muted: #586273;
+                --line: #e2e7ef;
+                --line2: #eef2f7;
+                --paper: #ffffff;
+                --bg: #eef2f5;
+
+                /* single tone */
+                --g: #0f766e; /* classy teal-green */
+                --g-ink: #0b3f3a; /* deeper green for emphasis */
+                --g-soft: rgba(15, 118, 110, 0.08);
+                --g-soft2: rgba(15, 118, 110, 0.14);
+
+                /* compact */
+                --fs: 12px;
+                --lh: 1.33;
+                --pad: 16px;
+                --gap: 10px;
+
+                /* sharper */
+                --radius: 8px;
+
+                --shadow: 0 14px 30px rgba(11, 18, 32, 0.1);
+                --shadow2: 0 10px 18px rgba(11, 18, 32, 0.08);
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--ink);
+                font:
+                    var(--fs) / var(--lh) system-ui,
+                    -apple-system,
+                    Segoe UI,
+                    Roboto,
+                    Ubuntu,
+                    Arial;
+                letter-spacing: 0.1px;
+            }
+
+            .page {
+                width: min(1020px, 100%);
+                margin: 16px auto;
+                padding: 0 12px;
+                page-break-after: always;
+            }
+            .page:last-child {
+                page-break-after: auto;
+            }
+
+            .sheet {
+                position: relative;
+                background: var(--paper);
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                padding: var(--pad);
+                overflow: hidden;
+            }
+
+            /* subtle pattern (no gradients) */
+            .sheet::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(circle at 1px 1px, rgba(15, 118, 110, 0.08) 1px, transparent 1.2px) 0 0/20px 20px;
+                opacity: 0.45;
+                pointer-events: none;
+            }
+
+            /* inner frame */
+            .sheet::after {
+                content: "";
+                position: absolute;
+                inset: 12px;
+                border: 1px solid rgba(15, 118, 110, 0.18);
+                border-radius: 6px;
+                pointer-events: none;
+            }
+
+            @media print {
+                body {
+                    background: #fff;
+                }
+                .page {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                }
+                .sheet {
+                    border: none;
+                    border-radius: 0;
+                    box-shadow: none;
+                    padding: 0;
+                }
+                .sheet::before,
+                .sheet::after {
+                    display: none;
+                }
+            }
+
+            .header {
+                position: relative;
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 12px 12px 10px;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                background: #fff;
+                box-shadow: var(--shadow2);
+            }
+
+            /* top rule (single tone) */
+            .header::before {
+                content: "";
+                position: absolute;
+                left: 12px;
+                right: 12px;
+                top: 10px;
+                height: 2px;
+                background: var(--g);
+                opacity: 0.85;
+            }
+
+            /* left bar */
+            .header::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 6px;
+                background: var(--g);
+                border-top-left-radius: var(--radius);
+                border-bottom-left-radius: var(--radius);
+            }
+
+            .brand {
+                max-width: 70%;
+            }
+            .brand .kicker {
+                margin: 0 0 4px;
+                font-size: 10px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 0.38px;
+                color: var(--muted);
+            }
+            .brand .title {
+                margin: 0;
+                font-size: 15px;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: 0.35px;
+                color: var(--ink);
+            }
+            .brand .sub {
+                margin-top: 8px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 10px;
+                border-radius: 999px;
+                border: 1px solid rgba(15, 118, 110, 0.22);
+                background: var(--g-soft);
+                color: var(--g-ink);
+                font-size: 11px;
+                font-weight: 950;
+                white-space: nowrap;
+            }
+            .chip .dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 99px;
+                background: var(--g);
+                display: inline-block;
+            }
+
+            .meta {
+                min-width: 240px;
+                text-align: right;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .meta .badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 7px 10px;
+                border-radius: 6px; /* sharper */
+                background: #fff;
+                border: 1px solid rgba(15, 118, 110, 0.26);
+                font-weight: 1000;
+                letter-spacing: 0.22px;
+                color: var(--ink);
+            }
+            .meta .badge .seal {
+                width: 14px;
+                height: 14px;
+                border-radius: 3px;
+                border: 1px solid rgba(15, 118, 110, 0.7);
+                background: rgba(15, 118, 110, 0.12);
+                display: inline-block;
+                position: relative;
+            }
+            .meta .badge .seal::after {
+                content: "";
+                position: absolute;
+                inset: 3px;
+                border-radius: 2px;
+                background: rgba(15, 118, 110, 0.3);
+            }
+            .meta .lines {
+                margin-top: 8px;
+                display: grid;
+                gap: 4px;
+            }
+            .meta .lines b {
+                color: var(--ink);
+            }
+
+            .grid {
+                margin-top: 10px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: var(--gap);
+            }
+            .card {
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                background: #fff;
+                box-shadow: 0 10px 18px rgba(11, 18, 32, 0.05);
+                overflow: hidden;
+                position: relative;
+            }
+            /* corner notch accent (no gradient) */
+            .card::before {
+                content: "";
+                position: absolute;
+                right: 0;
+                top: 0;
+                width: 0;
+                height: 0;
+                border-left: 22px solid transparent;
+                border-bottom: 22px solid transparent;
+                border-top: 22px solid rgba(15, 118, 110, 0.14);
+            }
+            .card .head {
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--line2);
+                background: rgba(15, 118, 110, 0.06);
+                font-size: 10px;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: 0.36px;
+                color: var(--g-ink);
+            }
+            .card .body {
+                padding: 8px 12px;
+            }
+
+            .row {
+                display: flex;
+                gap: 10px;
+                margin: 4px 0;
+                font-size: 11.5px;
+            }
+            .row b {
+                min-width: 160px;
+                color: var(--muted);
+                font-weight: 950;
+            }
+            .row span {
+                color: var(--ink);
+                font-weight: 750;
+            }
+            .mono {
+                font-variant-numeric: tabular-nums;
+            }
+            .money {
+                white-space: nowrap;
+                font-variant-numeric: tabular-nums;
+            }
+
+            /* Object */
+            .object {
+                margin-top: 10px;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                overflow: hidden;
+                background: #fff;
+                box-shadow: 0 10px 18px rgba(11, 18, 32, 0.05);
+            }
+            .object .head {
+                padding: 8px 12px;
+                background: rgba(15, 118, 110, 0.06);
+                border-bottom: 1px solid var(--line2);
+                font-size: 10px;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: 0.36px;
+                color: var(--g-ink);
+                display: flex;
+                justify-content: space-between;
+                gap: 10px;
+            }
+            .object .head .mini {
+                font-weight: 950;
+                color: var(--g);
+                letter-spacing: 0.2px;
+                text-transform: none;
+            }
+            .object .body {
+                padding: 9px 12px;
+                font-size: 11.5px;
+                color: var(--ink);
+                background: #fff;
+            }
+
+            /* Section label */
+            .section {
+                margin-top: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 12px;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                background: #fff;
+                box-shadow: 0 10px 18px rgba(11, 18, 32, 0.05);
+                position: relative;
+            }
+            .section::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 6px;
+                background: var(--g);
+                border-top-left-radius: var(--radius);
+                border-bottom-left-radius: var(--radius);
+                opacity: 0.9;
+            }
+            .section .h {
+                margin-left: 6px;
+                font-size: 10px;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: 0.36px;
+                color: var(--muted);
+            }
+            .section .rhs {
+                font-size: 11px;
+                color: var(--muted);
+                white-space: nowrap;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                overflow: hidden;
+                background: #fff;
+                margin-top: 8px;
+                box-shadow: 0 10px 18px rgba(11, 18, 32, 0.05);
+            }
+            thead th {
+                padding: 8px 10px;
+                font-size: 10px;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                color: var(--g-ink);
+                background: rgba(15, 118, 110, 0.08); /* monotone fill */
+                border-bottom: 1px solid var(--line);
+                text-align: left;
+                vertical-align: bottom;
+            }
+            tbody td {
+                padding: 8px 10px;
+                border-bottom: 1px solid var(--line2);
+                font-size: 11.5px;
+                vertical-align: top;
+                background: #fff;
+            }
+            tbody tr:nth-child(even) td {
+                background: #fbfdfd;
+            }
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .right {
+                text-align: right;
+            }
+            .center {
+                text-align: center;
+            }
+            .w-50 {
+                width: 50px;
+            }
+            .w-70 {
+                width: 70px;
+            }
+            .w-120 {
+                width: 120px;
+            }
+            .w-160 {
+                width: 160px;
+            }
+
+            .row-total td {
+                background: rgba(15, 118, 110, 0.06);
+                font-weight: 1000;
+            }
+            .row-net td {
+                background: rgba(15, 118, 110, 0.1);
+                font-weight: 1100;
+                border-top: 2px solid rgba(15, 118, 110, 0.28);
+            }
+
+            /* Bottom blocks + signatures */
+            .bottom {
+                margin-top: 10px;
+                display: grid;
+                grid-template-columns: 1fr 340px;
+                gap: var(--gap);
+                align-items: start;
+            }
+            .note {
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                background: #fff;
+                box-shadow: 0 10px 18px rgba(11, 18, 32, 0.05);
+                padding: 10px 12px;
+                font-size: 11px;
+                color: var(--muted);
+            }
+            .note b {
+                color: var(--ink);
+            }
+
+            .totals {
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                overflow: hidden;
+                background: #fff;
+                box-shadow: 0 10px 18px rgba(11, 18, 32, 0.05);
+            }
+            .totals .tr {
+                display: flex;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--line2);
+                font-size: 11.5px;
+                background: #fff;
+            }
+            .totals .tr:last-child {
+                border-bottom: none;
+            }
+            .totals .k {
+                color: var(--muted);
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: 0.25px;
+                font-size: 10px;
+            }
+            .totals .v {
+                font-weight: 1100;
+                color: var(--ink);
+                font-variant-numeric: tabular-nums;
+            }
+            .totals .final {
+                background: rgba(15, 118, 110, 0.08);
+                border-top: 2px solid rgba(15, 118, 110, 0.28);
+            }
+
+            .sigs2 {
+                margin-top: 10px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: var(--gap);
+            }
+            .sigs3 {
+                margin-top: 10px;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: var(--gap);
+            }
+            .sig {
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                background: #fff;
+                box-shadow: 0 10px 18px rgba(11, 18, 32, 0.05);
+                min-height: 90px;
+                padding: 10px 12px;
+                position: relative;
+                overflow: hidden;
+            }
+            .sig::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 6px;
+                background: var(--g);
+                opacity: 0.85;
+            }
+            .sig .t {
+                margin-left: 6px;
+                font-size: 10px;
+                font-weight: 1000;
+                text-transform: uppercase;
+                letter-spacing: 0.35px;
+                color: var(--muted);
+                padding-bottom: 6px;
+                border-bottom: 1px solid var(--line2);
+                margin-bottom: 8px;
+            }
+            .sig .hint {
+                margin-left: 6px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+
+            /* Fit + no-break rules */
+            .no-break {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            table,
+            thead,
+            tbody,
+            tr,
+            td {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            @media print {
+                .situation-fit {
+                    transform: scale(0.995);
+                    transform-origin: top left;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- PAGE 1 — SITUATION -->
+        <section class="page portrait">
+            <article class="sheet situation-fit">
+                <header class="header no-break">
+                    <div class="brand">
+                        <p class="kicker">République Algérienne Démocratique et Populaire</p>
+                        <h1 class="title">Situation des Travaux</h1>
+                        <div class="sub">
+                            <span class="chip"><span class="dot"></span> CTH - Controlle technique</span>
+                            <span class="chip"><span class="dot"></span> Situation {{ invoice.invoiceNumber }}</span>
+                            {{#if invoice.definitive}}
+                            <span class="chip"><span class="dot"></span> Définitive</span>
+                            {{/if}}
+                        </div>
+                    </div>
+
+                    <div class="meta">
+                        <div class="badge"><span class="seal"></span> Références</div>
+                        <div class="lines">
+                            <div><b>Date :</b> {{formatDate invoice.invoiceDate}}</div>
+                            <div><b>Réf. :</b> {{uppercase project.ref}}</div>
+                            <div><b>Arrêtée au :</b> … / … / 20…</div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="grid no-break">
+                    <div class="card">
+                        <div class="head">Informations Entreprise</div>
+                        <div class="body">
+                            <div class="row"><b>Entreprise</b><span>{{company.name}}</span></div>
+                            <div class="row"><b>Adresse</b><span>{{company.address}}</span></div>
+                            <div class="row"><b>NIF</b><span class="mono">{{company.nif}}</span></div>
+                            <div class="row"><b>NIS</b><span class="mono">{{company.nis}}</span></div>
+                            <div class="row"><b>RC</b><span class="mono">{{company.rc}}</span></div>
+                            <div class="row"><b>Compte bancaire</b><span class="mono">{{company.bankName}}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="head">Informations Client</div>
+                        <div class="body">
+                            <div class="row"><b>Client</b><span>{{capitalize project.clientId}}</span></div>
+                            <div class="row"><b>Opération</b><span>{{capitalize project.title}}</span></div>
+                            <div class="row"><b>Convention</b><span> {{project.convention}} </span></div>
+                            <div class="row">
+                                <b>Montant TTC</b><span class="money"><b>{{formatCurrency project.montantTTC}}</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="object no-break">
+                    <div class="head">
+                        <span>Objet</span>
+                        <span class="mini">Formulaire</span>
+                    </div>
+                    <div class="body">{{capitalize project.title}}</div>
+                </div>
+
+                <div class="section no-break">
+                    <div class="h">Récapitulatif</div>
+                    <div class="rhs">Montants en DA</div>
+                </div>
+
+                <table aria-label="Récapitulatif situation">
+                    <thead>
+                        <tr>
+                            <th>Libellé</th>
+                            <th class="right w-160">Montant (DA)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Montant des prestations cumulées HT</td>
+                            <td class="right mono">{{formatCurrency project.cumulatedAmountHT}}</td>
+                        </tr>
+                        <tr>
+                            <td>Avances forfaitaires (total)</td>
+                            <td class="right">—</td>
+                        </tr>
+                        <tr>
+                            <td>Avances sur approvisionnement (total)</td>
+                            <td class="right">—</td>
+                        </tr>
+                        <tr>
+                            <td>Autres (à préciser)</td>
+                            <td class="right">—</td>
+                        </tr>
+
+                        <tr class="row-total">
+                            <td>Total (1)</td>
+                            <td class="right mono">{{formatCurrency project.cumulatedAmountHT}}</td>
+                        </tr>
+
+                        <tr>
+                            <td>À déduire — Prestations réglées précédemment</td>
+                            <td class="right mono">{{formatCurrency project.cumulatedRecoveredAmountHT}}</td>
+                        </tr>
+                        <tr>
+                            <td>Avances forfaitaires reçues</td>
+                            <td class="right">—</td>
+                        </tr>
+                        <tr>
+                            <td>Avances sur approvisionnement</td>
+                            <td class="right">—</td>
+                        </tr>
+                        <tr>
+                            <td>Autres (à préciser)</td>
+                            <td class="right">—</td>
+                        </tr>
+
+                        <tr class="row-total">
+                            <td>Total (2)</td>
+                            <td class="right mono">{{formatCurrency project.cumulatedRecoveredAmountHT}}</td>
+                        </tr>
+
+                        <tr class="row-net">
+                            <td>Montant net de la situation HT (3) = (1) − (2)</td>
+                            <td class="right mono">{{formatCurrency invoice.amountHT}}</td>
+                        </tr>
+                        {{#each project.vatRates }}
+                        <tr>
+                            <td>{{ this.label }}</td>
+                            <td class="right mono">{{formatCurrency this.amount}}</td>
+                        </tr>
+                        {{/each}}
+                        <tr class="row-total">
+                            <td>Montant de la situation en TTC</td>
+                            <td class="right mono">{{formatCurrency invoice.amountTTC}}</td>
+                        </tr>
+                        <tr class="row-total">
+                            <td>Montant net à payer à l’entreprise</td>
+                            <td class="right mono">{{formatCurrency project.cumulatedUnrecoveredAmountTTC}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="sigs2 no-break">
+                    <div class="sig">
+                        <div class="t">Le Maître de l’Ouvrage</div>
+                        <div class="hint">Cachet et signature</div>
+                    </div>
+                    <div class="sig">
+                        <div class="t">L’Entreprise</div>
+                        <div class="hint">Cachet et signature</div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <!-- PAGE 2 — DÉCOMPTE -->
+        <section class="page landscape">
+            <article class="sheet">
+                <header class="header no-break">
+                    <div class="brand">
+                        <p class="kicker">{{company.name}}</p>
+                        <h1 class="title">Décompte des prestations réalisées</h1>
+                        <div class="sub">
+                            <span class="chip"><span class="dot"></span> Décompte N°{{project.decompteNumber}}</span>
+                            {{#if invoice.definitive}}
+                            <span class="chip"><span class="dot"></span> Définitif</span>
+                            {{/if}}
+                            <span class="chip"><span class="dot"></span> {{project.projectNumber}} </span>
+                        </div>
+                    </div>
+
+                    <div class="meta">
+                        <div class="badge"><span class="seal"></span> Références</div>
+                        <div class="lines">
+                            <div><b>Date :</b> {{formatDate invoice.invoiceDate}}</div>
+                            <div><b>Réf. :</b> {{ uppercase project.ref}}</div>
+                            <div><b>Arrêté au :</b> … / … / 20…</div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="object no-break">
+                    <div class="head">
+                        <span>Objet</span>
+                        <span class="mini">Formulaire</span>
+                    </div>
+                    <div class="body">{{capitalize project.title}}</div>
+                </div>
+
+                <div class="section no-break">
+                    <div class="h">Détail des prestations</div>
+                    <div class="rhs">Montants en DA</div>
+                </div>
+
+                <table aria-label="Tableau décompte">
+                    <thead>
+                        <tr>
+                            <th class="center w-50">N°</th>
+                            <th>Désignation des prestations</th>
+                            <th class="center w-50">Qté</th>
+                            <th class="right w-120">Travaux HT</th>
+                            <th class="center w-70">CTH %</th>
+                            <th class="right w-160">Précédentes HT</th>
+                            <th class="right w-160">Mois HT</th>
+                            <th class="right w-160">Total HT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="center">1</td>
+                            <td>
+                                <b> {{project.serviceTypeId.label}} </b> {{project.title}}.<br />
+                                <span style="color: var(--muted)"
+                                    >Situation d’entreprise n°{{project.decompteNumber}} {{#if inv.definitiv}} et définitive {{/if}} —
+                                    {{project.clientId}}</span
+                                >
+                            </td>
+                            <td class="center">1</td>
+                            <td class="right mono">{{formatCurrency project.workAmountMT}}</td>
+                            <td class="center mono">{{project.serviceRate}} %</td>
+                            <td class="right mono">{{formatCurrency project.cumulatedRecoveredAmountHT}}</td>
+                            <td class="right mono">{{formatCurrency invoice.amountHT}}</td>
+                            <td class="right mono"><b>{{formatCurrency project.allCumulated}}</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="bottom">
+                    <div class="note">
+                        <b>Arrêté le présent décompte</b> à la somme TTC de :<br />
+                        <span>{{capitalize (numberToWords project.allCumulated)}}</span>
+                    </div>
+
+                    <div class="totals" aria-label="Totaux">
+                        <div class="tr">
+                            <div class="k">Total HT</div>
+                            <div class="v mono">{{formatCurrency project.cumulatedAmountHT}}</div>
+                        </div>
+                        {{#each project.vatRates }}
+                        <div class="tr">
+                            <div class="k">{{ this.label }}</div>
+                            <div class="v mono">{{formatCurrency this.amount}}</div>
+                        </div>
+                        {{/each}}
+                        <div class="tr final">
+                            <div class="k">Total TTC</div>
+                            <div class="v mono">{{formatCurrency project.allCumulated}}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sigs3 no-break">
+                    <div class="sig">
+                        <div class="t">CTH</div>
+                        <div class="hint">Nom, cachet et signature</div>
+                    </div>
+                    <div class="sig">
+                        <div class="t">Maître de l’Ouvrage</div>
+                        <div class="hint">Nom, cachet et signature</div>
+                    </div>
+                    <div class="sig">
+                        <div class="t">Observations</div>
+                        <div class="hint">—</div>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </body>
+</html>
