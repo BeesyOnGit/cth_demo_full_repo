@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/logs
+back/tests
+back/.env
+back/.env.*
+front/.env
+front/.env.local
+.git
+.github
+deploy

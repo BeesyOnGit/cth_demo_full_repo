@@ -27,6 +27,8 @@ export const createApp = () => {
     const env = process.env.NODE_ENV || "development";
     const port = process.env.PORT || 3000;
     const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : ["http://localhost:3005"];
+    // Behind the VPS nginx: take the client IP from X-Forwarded-For, but only when it comes from localhost
+    app.set("trust proxy", "loopback");
     // Middlewares
     app.use(helmet());
     app.use(
@@ -61,6 +63,11 @@ export const createApp = () => {
             },
         })
     );
+
+    // Production image: also serve the built front end (HashRouter, so only / and /assets are needed)
+    if (process.env.STATIC_DIR) {
+        app.use(express.static(process.env.STATIC_DIR, { index: "index.html" }));
+    }
 
     app.use(
         "/",

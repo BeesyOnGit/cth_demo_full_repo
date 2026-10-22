@@ -1,0 +1,27 @@
+# Production stack on the VPS: one container running MongoDB and the API (which serves the built front end).
+# The PDF service keeps running on the VPS host itself.
+# Values come from the `.env` next to this file (see .env.production.example).
+# The image is pinned by deploy.sh in docker-compose.override.yml (loaded automatically by compose).
+
+name: cth
+
+services:
+  app:
+    # image: set by deploy.sh in docker-compose.override.yml
+    restart: unless-stopped
+    env_file: .env
+    # Host network: PDF_CONVERSION_API_URL (127.0.0.1:3005) reaches the PDF service on the VPS,
+    # the app listens on PORT and MongoDB on 127.0.0.1:27017 of the VPS (loopback only).
+    network_mode: host
+    volumes:
+      - mongo_data:/data/db
+    # Time for MongoDB to flush and shut down cleanly
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+volumes:
+  mongo_data:
